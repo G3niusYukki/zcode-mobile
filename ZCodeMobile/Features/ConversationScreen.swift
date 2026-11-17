@@ -286,12 +286,13 @@ struct ConversationScreen: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.cardFill)
+                .fill(Theme.bgSolid) // 不透明底:避免消息文字透出
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Theme.cardStroke, lineWidth: 1)
         )
+        .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         .padding(.horizontal, 4)
     }
 
