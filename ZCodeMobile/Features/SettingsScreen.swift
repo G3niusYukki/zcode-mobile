@@ -97,7 +97,7 @@ struct SettingsScreen: View {
 
                     section("关于") {
                         SettingsCard {
-                            settingRow("当前版本", value: "0.1.0", chevron: true)
+                            settingRow("当前版本", value: "1.0.0", chevron: true)
                             divider
                             settingRow("协议", value: "ZCode Relay V2", chevron: true)
                             divider

@@ -17,3 +17,6 @@ artifacts/
 # Secrets / local env
 .env
 *.local
+
+# Release artifacts
+*.ipa

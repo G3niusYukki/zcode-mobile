@@ -58,7 +58,7 @@ public final class RelayClient: @unchecked Sendable {
         public var deviceOfflineGrace: TimeInterval = 15
         public var outboundQueueLimit = 50
         public var allowInsecureWS = false
-        public var meta = RelayProtocol.TerminalMeta(platform: "ios", version: "0.1.0", name: "ZCodeMobile")
+        public var meta = RelayProtocol.TerminalMeta(platform: "ios", version: "1.0.0", name: "ZCodeMobile")
         public init() {}
     }
 

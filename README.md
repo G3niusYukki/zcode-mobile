@@ -47,6 +47,13 @@ Packages/ZCodeMobileCore/       协议包(纯 Swift,可独立 swift test)
 
 协议规格文档见 [`docs/specs/`](docs/specs/)(帧编码、中继认证、通道与对话协议)。
 
+## 下载
+
+[Releases](https://github.com/G3niusYukki/zcode-mobile/releases) 提供**未签名 IPA**(`ZCodeMobile-v1.0.0-unsigned.ipa`),需自行签名安装:
+
+- AltStore / SideStore / Sideloadly / Esign 等工具重签名后安装
+- 或 Xcode 打开源码,按下方步骤用自己的 Apple ID 签名构建
+
 ## 构建
 
 ```bash
