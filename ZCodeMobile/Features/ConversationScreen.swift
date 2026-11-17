@@ -204,6 +204,10 @@ struct ConversationScreen: View {
 
     private var composer: some View {
         VStack(spacing: 8) {
+            if showContext {
+                sessionInfoPanel
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
             contextRow
 
             if !model.pendingAttachments.isEmpty {
@@ -265,6 +269,44 @@ struct ConversationScreen: View {
                 .environmentObject(model)
                 .presentationDetents([.height(320)])
                 .presentationBackground(.thinMaterial)
+        }
+    }
+
+    /// 上下文面板:当前会话的真实信息
+    private var sessionInfoPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            infoRow("工作区", value: workspaceShortPath)
+            infoRow("会话", value: model.selectedTask?.taskId ?? "--")
+            infoRow("消息行", value: "\(rows.count)")
+            infoRow("模型", value: model.currentModelLabel)
+            infoRow("思考", value: model.selectedThought)
+            infoRow("审批模式", value: model.availableModes.first { $0.value == model.selectedMode }?.label ?? model.selectedMode)
+            infoRow("状态", value: state?.control.phase ?? "--")
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Theme.cardFill)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Theme.cardStroke, lineWidth: 1)
+        )
+        .padding(.horizontal, 4)
+    }
+
+    private func infoRow(_ label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+                .frame(width: 56, alignment: .leading)
+            Text(value)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(Theme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

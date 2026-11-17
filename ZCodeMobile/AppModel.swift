@@ -903,6 +903,10 @@ final class AppModel: ObservableObject {
 
     func applyMode(_ mode: String) {
         selectedMode = mode // 乐观更新
+        isApplyingMode = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.isApplyingMode = false
+        }
         guard let task = selectedTask, let conversation = conversation else { return }
         let path = activeWorkspace?.workspacePath ?? task.workspacePath
         Task {
@@ -1029,6 +1033,37 @@ final class AppModel: ObservableObject {
         return report
     }
 
+    /// 从会话快照同步当前 模型/思考/模式(桌面端为准)
+    func syncSelectionsFromState() {
+        guard let config = conversationStateForUI?.snapshotRaw["config"] as? [String: Any] else { return }
+        if let mode = config["mode"] as? String, !mode.isEmpty,
+           mode != selectedMode, !isApplyingMode {
+            selectedMode = normalizedMode(mode)
+        }
+        if let model = config["model"] as? String, !model.isEmpty {
+            selectedModel = model
+        }
+        if let provider = config["provider"] as? String, !provider.isEmpty {
+            selectedProvider = provider
+        }
+        if let thought = config["thought"] as? String, !thought.isEmpty {
+            selectedThought = thought
+        }
+    }
+
+    private var isApplyingMode = false
+
+    private func normalizedMode(_ raw: String) -> String {
+        switch raw.lowercased() {
+        case "full-access", "agent-full-access", "bypasspermissions": return "yolo"
+        case "auto", "authedits", "autoedit", "dontask", "agent", "edit": return "edit"
+        case "guarded": return "guarded"
+        case "plan": return "plan"
+        case "default", "build": return "build"
+        default: return raw
+        }
+    }
+
     /// 会话列表空窗自愈:桥就绪但 3 秒内没有任务 → 重新订阅 controller(最多 4 次)
     private var taskListRetries = 0
     private func ensureTaskListLoaded() {
@@ -1054,6 +1089,7 @@ final class AppModel: ObservableObject {
             if self.pendingRefresh == nil {
                 let work = DispatchWorkItem { [weak self] in
                     guard let self else { return }
+                    self.syncSelectionsFromState()
                     self.conversationTick += 1
                     self.pendingRefresh = nil
                 }
