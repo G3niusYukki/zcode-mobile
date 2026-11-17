@@ -78,7 +78,7 @@ struct MarkdownLiteText: View {
                     let code = String(text[text.index(after: i)..<end])
                     var run = AttributedString(code)
                     run.font = .system(size: 13.5, weight: .medium, design: .monospaced)
-                    run.foregroundColor = Color(red: 0.85, green: 0.92, blue: 1.0)
+                    run.foregroundColor = Theme.azure
                     run.backgroundColor = Theme.cardStroke
                     out += run
                     i = text.index(after: end)
@@ -223,7 +223,7 @@ struct CodeBlockView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(code)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(Color(red: 0.78, green: 0.88, blue: 1.0))
+                    .foregroundStyle(Theme.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, lang == nil ? 12 : 4)
                     .padding(.bottom, lang == nil ? 0 : 10)
@@ -232,7 +232,7 @@ struct CodeBlockView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.black.opacity(0.35))
+                .fill(Theme.cardFillStrong)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

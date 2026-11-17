@@ -175,7 +175,7 @@ struct UsageSheet: View {
                     .foregroundStyle(Theme.textSecondary)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.3)))
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Theme.cardFillStrong))
             }
         }
     }

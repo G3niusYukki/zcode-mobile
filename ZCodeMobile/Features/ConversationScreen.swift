@@ -601,12 +601,12 @@ struct ToolCallCard: View {
                             .lineLimit(10)
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.30)))
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Theme.cardFillStrong))
                     }
                     if let output = row.outputText, !output.isEmpty {
                         Text(output)
                             .font(.system(size: 11.5, design: .monospaced))
-                            .foregroundStyle(Color(red: 0.72, green: 0.88, blue: 0.80))
+                            .foregroundStyle(Theme.textSecondary)
                             .lineLimit(14)
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -699,7 +699,7 @@ struct ApprovalCard: View {
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(Theme.textSecondary)
                         .padding(10)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.30)))
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.cardFillStrong))
                 }
             }
             if let prompt = interaction.prompt {
