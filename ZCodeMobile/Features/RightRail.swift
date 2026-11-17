@@ -30,8 +30,8 @@ struct RightRail: View {
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(Theme.textSecondary)
                 .frame(width: 44, height: 44)
-                .background(Circle().fill(Color.white.opacity(0.09)))
-                .overlay(Circle().strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
+                .background(Circle().fill(Theme.cardFill))
+                .overlay(Circle().strokeBorder(Theme.cardStroke, lineWidth: 1))
         }
         .buttonStyle(bouncy())
         .accessibilityLabel(label)
@@ -126,6 +126,5 @@ struct DeviceSheet: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }

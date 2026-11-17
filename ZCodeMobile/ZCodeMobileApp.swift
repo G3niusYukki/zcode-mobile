@@ -53,8 +53,8 @@ struct WidgetToolbarButton: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Theme.textPrimary)
                 .frame(width: 34, height: 34)
-                .background(Circle().fill(Color.white.opacity(0.10)))
-                .overlay(Circle().strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+                .background(Circle().fill(Theme.cardStroke))
+                .overlay(Circle().strokeBorder(Theme.cardStroke, lineWidth: 1))
         }
         .buttonStyle(bouncy())
     }
@@ -83,35 +83,14 @@ struct RootView: View {
                             }
                         }
                     )
-                    .background {
-                        GeometryReader { geo in
-                            HarnessAnimatedBackground(
-                                style: HarnessBackgroundStyle.resolve(
-                                    size: geo.size,
-                                    isPad: UIDevice.current.userInterfaceIdiom == .pad),
-                                prefersOpenLightArcs: true,
-                                animationPaused: model.openConversation || model.keyboardVisible
-                            )
-                        }
-                        .ignoresSafeArea()
-                    }
                     .toolbar { sessionToolbar }
                     .toolbarBackground(.hidden, for: .navigationBar)
                     .navigationBarTitleDisplayMode(.inline)
                 }
-                .background(Color(red: 0.025, green: 0.09, blue: 0.17).ignoresSafeArea())
+                .background(Theme.background().ignoresSafeArea())
             }
         }
-        .background(
-            GeometryReader { geo in
-                HarnessAnimatedBackground(
-                    style: HarnessBackgroundStyle.resolve(
-                        size: geo.size,
-                        isPad: UIDevice.current.userInterfaceIdiom == .pad)
-                )
-            }
-            .ignoresSafeArea()
-        )
+        .background(Theme.background())
         .overlay(alignment: .top) {
             if let toast = model.toast {
                 Text(toast)
@@ -119,7 +98,7 @@ struct RootView: View {
                     .foregroundStyle(Theme.textPrimary)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(Capsule().fill(Color.black.opacity(0.65)))
-                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.10)))
+                    .overlay(Capsule().strokeBorder(Theme.cardStroke))
                     .padding(.top, 8)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
@@ -140,7 +119,6 @@ struct RootView: View {
             UsageSheet()
                 .environmentObject(model)
         }
-        .preferredColorScheme(.dark)
         .tint(Theme.azure)
         .onAppear {
             ZCodeMobileToolbarActions.shared.device = { model.showDeviceSheet = true }

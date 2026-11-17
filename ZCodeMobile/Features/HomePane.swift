@@ -133,7 +133,7 @@ struct HomePane: View {
         .frame(maxWidth: 380, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(red: 0.055, green: 0.10, blue: 0.17))
+                .fill(Theme.cardFillStrong)
                 .shadow(color: .black.opacity(0.4), radius: 20, y: 12)
         )
         .overlay(
@@ -201,7 +201,7 @@ struct HomePane: View {
     private var accountRow: some View {
         HStack(spacing: 10) {
             ZStack {
-                Circle().fill(Color.white.opacity(0.10))
+                Circle().fill(Theme.cardStroke)
                 Text("Z").font(.system(size: 15, weight: .black)).foregroundStyle(Theme.textPrimary)
             }
             .frame(width: 34, height: 34)

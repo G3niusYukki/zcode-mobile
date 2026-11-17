@@ -117,7 +117,6 @@ struct SettingsScreen: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func section<Content: View>(_ title: String, footer: String? = nil,
@@ -138,7 +137,7 @@ struct SettingsScreen: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+        Rectangle().fill(Theme.cardFill).frame(height: 0.5)
     }
 
     private func settingRow(_ title: String, value: String, chevron: Bool = false) -> some View {

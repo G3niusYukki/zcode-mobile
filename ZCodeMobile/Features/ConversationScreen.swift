@@ -33,7 +33,7 @@ struct ConversationScreen: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             composer
         }
-        .background(Color.black.opacity(0.28))
+        .background(Theme.background())
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: model.conversationTick)
     }
 
@@ -48,7 +48,7 @@ struct ConversationScreen: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Theme.textPrimary)
                     .frame(width: 38, height: 38)
-                    .background(Circle().fill(Color.white.opacity(0.08)))
+                    .background(Circle().fill(Theme.cardFill))
             }
             .buttonStyle(bouncy())
 
@@ -83,7 +83,7 @@ struct ConversationScreen: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(Color.white.opacity(0.06)))
+                .background(Capsule().fill(Theme.cardFill))
             }
 
             if state?.control.canStop == true {
@@ -123,7 +123,7 @@ struct ConversationScreen: View {
                                 .foregroundStyle(Theme.textSecondary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 7)
-                                .background(Capsule().fill(Color.white.opacity(0.06)))
+                                .background(Capsule().fill(Theme.cardFill))
                         }
                         .buttonStyle(bouncy())
                         .frame(maxWidth: .infinity)
@@ -238,7 +238,7 @@ struct ConversationScreen: View {
                     } label: {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 27))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.accentFill)
                     }
                     .buttonStyle(bouncy())
                     .transition(.scale.combined(with: .opacity))
@@ -248,11 +248,11 @@ struct ConversationScreen: View {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(Color.white.opacity(0.07))
+                    .fill(Theme.cardFill)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                    .strokeBorder(Theme.cardStroke, lineWidth: 1)
             )
             .animation(.spring(response: 0.25, dampingFraction: 0.8),
                        value: model.draft(for: currentSessionKey).isEmpty)
@@ -297,7 +297,7 @@ struct ConversationScreen: View {
                 .foregroundStyle(Theme.textSecondary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Capsule().fill(Color.white.opacity(0.07)))
+                .background(Capsule().fill(Theme.cardFill))
             }
 
             Spacer()
@@ -328,7 +328,7 @@ struct ConversationScreen: View {
         .foregroundStyle(Theme.textSecondary)
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
-        .background(Capsule().fill(Color.white.opacity(0.07)))
+        .background(Capsule().fill(Theme.cardFill))
     }
 
     private func thoughtLabel(_ level: String) -> String {
@@ -388,7 +388,7 @@ struct ConversationScreen: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .background(Capsule().fill(Color.white.opacity(0.08)))
+                    .background(Capsule().fill(Theme.cardFill))
                 }
             }
             .padding(.horizontal, 22)
@@ -430,7 +430,7 @@ struct ConversationScreen: View {
         .foregroundStyle(Theme.textSecondary)
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
-        .background(Capsule().fill(Color.white.opacity(0.07)))
+        .background(Capsule().fill(Theme.cardFill))
     }
 
     private var workspaceShortPath: String {
@@ -560,7 +560,7 @@ struct MessageRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.cardFill))
     }
 }
 
@@ -712,7 +712,7 @@ struct ApprovalCard: View {
                         .textFieldStyle(.plain)
                         .font(.system(size: 14))
                         .padding(.horizontal, 12).padding(.vertical, 9)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.08)))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.cardFill))
                     Button("发送") {
                         onFreeText(freeText)
                         freeText = ""
@@ -756,7 +756,7 @@ struct ApprovalCard: View {
                             .textFieldStyle(.plain)
                             .font(.system(size: 14))
                             .padding(.horizontal, 12).padding(.vertical, 9)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.08)))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.cardFill))
                         Button("发送") {
                             onFreeText(freeText)
                             freeText = ""
@@ -961,7 +961,7 @@ struct ComposerActionsSheet: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 56)
+        Rectangle().fill(Theme.cardFill).frame(height: 0.5).padding(.leading, 56)
     }
 
     private func thoughtText(_ level: String) -> String {

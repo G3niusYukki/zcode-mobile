@@ -23,7 +23,7 @@ struct SessionsPane: View {
                         .foregroundStyle(Theme.textPrimary)
                         .padding(.horizontal, 10)
                         .frame(height: 30)
-                        .background(Capsule().fill(Color.white.opacity(0.10)))
+                        .background(Capsule().fill(Theme.cardStroke))
                     }
                     .buttonStyle(bouncy())
                     .accessibilityLabel("返回会话列表")
@@ -42,7 +42,7 @@ struct SessionsPane: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Theme.textPrimary)
                             .frame(width: 32, height: 32)
-                            .background(Circle().fill(Color.white.opacity(0.08)))
+                            .background(Circle().fill(Theme.cardFill))
                     }
                     .buttonStyle(bouncy())
                     .accessibilityLabel("新建会话")
@@ -111,7 +111,7 @@ struct SessionsPane: View {
                                            value: model.filteredTasks.count)
                             if task.id != model.filteredTasks.last?.id {
                                 Rectangle()
-                                    .fill(Color.white.opacity(0.05))
+                                    .fill(Theme.cardFill)
                                     .frame(height: 0.5)
                                     .padding(.leading, 22)
                             }
@@ -126,7 +126,7 @@ struct SessionsPane: View {
             // footer:账号 + 配对
             HStack(spacing: 10) {
                 ZStack {
-                    Circle().fill(Color.white.opacity(0.10))
+                    Circle().fill(Theme.cardStroke)
                     Text("Z").font(.system(size: 14, weight: .black)).foregroundStyle(Theme.textPrimary)
                 }
                 .frame(width: 32, height: 32)
@@ -147,7 +147,7 @@ struct SessionsPane: View {
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Theme.textSecondary)
                         .frame(width: 32, height: 32)
-                        .background(Circle().fill(Color.white.opacity(0.06)))
+                        .background(Circle().fill(Theme.cardFill))
                 }
                 .buttonStyle(bouncy())
                 .accessibilityLabel("配对设备")
@@ -170,7 +170,7 @@ struct SessionsPane: View {
                 .foregroundStyle(model.activeWorkspaceID == nil ? .black : Theme.textSecondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(model.activeWorkspaceID == nil ? Color.white : Color.white.opacity(0.07)))
+                .background(Capsule().fill(model.activeWorkspaceID == nil ? Color.white : Theme.cardFill))
         }
         .buttonStyle(.plain)
     }
@@ -184,7 +184,7 @@ struct SessionsPane: View {
                 .foregroundStyle(model.activeWorkspaceID == ws.id ? .black : Theme.textSecondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(model.activeWorkspaceID == ws.id ? Color.white : Color.white.opacity(0.07)))
+                .background(Capsule().fill(model.activeWorkspaceID == ws.id ? Color.white : Theme.cardFill))
         }
         .buttonStyle(.plain)
     }
@@ -225,7 +225,7 @@ struct SessionRowPressStyle: ButtonStyle {
         configuration.label
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(configuration.isPressed ? Color.white.opacity(0.06) : .clear)
+                    .fill(configuration.isPressed ? Theme.cardFill : .clear)
             )
             .scaleEffect(configuration.isPressed ? 0.995 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
@@ -268,7 +268,7 @@ struct SessionRow: View {
         .padding(.vertical, 13)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(pressed ? Color.white.opacity(0.06) : .clear)
+                .fill(pressed ? Theme.cardFill : .clear)
         )
 
     }

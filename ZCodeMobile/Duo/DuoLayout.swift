@@ -20,17 +20,11 @@ struct DuoLayout<Primary: View, Detail: View>: View {
                 HStack(spacing: 0) {
                     primary()
                         .frame(width: sidebarWidth)
-                        .background(
-                            LinearGradient(colors: [Color.black.opacity(0.46), Color.black.opacity(0.30)],
-                                           startPoint: .top, endPoint: .bottom)
-                        )
-                    Rectangle().fill(Color.white.opacity(0.07)).frame(width: 0.5)
+                        .background(Theme.sidebarBG)
+                    Rectangle().fill(Theme.cardFill).frame(width: 0.5)
                     detail()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(
-                            RadialGradient(colors: [Color.black.opacity(0.10), Color.black.opacity(0.34)],
-                                           center: .center, startRadius: 80, endRadius: 700)
-                        )
+                        .background(Theme.background())
                 }
             }
         }

@@ -192,7 +192,7 @@ struct UsageSheet: View {
     private func progressBar(_ fraction: Double) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.08))
+                Capsule().fill(Theme.cardFill)
                 Capsule()
                     .fill(LinearGradient(colors: [Theme.azure, Theme.mint],
                                          startPoint: .leading, endPoint: .trailing))
@@ -210,7 +210,7 @@ struct UsageSheet: View {
         .foregroundStyle(Theme.textSecondary)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Capsule().fill(Color.white.opacity(0.06)))
+        .background(Capsule().fill(Theme.cardFill))
     }
 
     private func format(_ n: Int) -> String {

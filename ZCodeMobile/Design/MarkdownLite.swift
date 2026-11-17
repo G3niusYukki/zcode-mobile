@@ -79,7 +79,7 @@ struct MarkdownLiteText: View {
                     var run = AttributedString(code)
                     run.font = .system(size: 13.5, weight: .medium, design: .monospaced)
                     run.foregroundColor = Color(red: 0.85, green: 0.92, blue: 1.0)
-                    run.backgroundColor = Color.white.opacity(0.10)
+                    run.backgroundColor = Theme.cardStroke
                     out += run
                     i = text.index(after: end)
                     continue
@@ -236,7 +236,7 @@ struct CodeBlockView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                .strokeBorder(Theme.cardFill, lineWidth: 1)
         )
     }
 }

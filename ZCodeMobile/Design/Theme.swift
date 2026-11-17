@@ -1,99 +1,52 @@
 import SwiftUI
 
-/// ZCodeMobile 设计系统:深蓝夜航 + 玻璃卡片 + 点阵世界底纹(对齐 whaleness 质感)
+/// 极简主题:跟随系统外观 —— 日间纯白、夜间纯黑,无背景特效。
 enum Theme {
-    // 品牌/背景
-    static let bgTop = Color(red: 0.035, green: 0.070, blue: 0.130)
-    static let bgMid = Color(red: 0.043, green: 0.118, blue: 0.208)
-    static let bgBottom = Color(red: 0.020, green: 0.043, blue: 0.078)
-    static let glow = Color(red: 0.16, green: 0.42, blue: 0.72)
+    // MARK: 动态基色
 
-    // 玻璃
-    static let cardFill = Color.white.opacity(0.055)
-    static let cardFillStrong = Color.white.opacity(0.085)
-    static let cardStroke = Color.white.opacity(0.09)
+    static func dynamic(light: UIColor, dark: UIColor) -> Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark ? dark : light
+        })
+    }
 
-    // 语义色
-    static let mint = Color(red: 0.35, green: 0.85, blue: 0.64)
-    static let amber = Color(red: 1.0, green: 0.72, blue: 0.30)
-    static let azure = Color(red: 0.38, green: 0.66, blue: 1.0)
-    static let coral = Color(red: 1.0, green: 0.45, blue: 0.42)
+    static let bgSolid = dynamic(light: .white, dark: .black)
+    static let sidebarBG = dynamic(
+        light: UIColor(red: 0.965, green: 0.965, blue: 0.972, alpha: 1),
+        dark: UIColor(white: 0.055, alpha: 1))
+    static let inputFill = dynamic(
+        light: UIColor(white: 0, alpha: 0.055),
+        dark: UIColor(white: 1, alpha: 0.075))
 
-    static let textPrimary = Color.white.opacity(0.94)
-    static let textSecondary = Color.white.opacity(0.64)
-    static let textTertiary = Color.white.opacity(0.42)
+    static let cardFill = dynamic(
+        light: UIColor(white: 0, alpha: 0.045),
+        dark: UIColor(white: 1, alpha: 0.055))
+    static let cardFillStrong = dynamic(
+        light: UIColor(white: 0, alpha: 0.06),
+        dark: UIColor(white: 1, alpha: 0.085))
+    static let cardStroke = dynamic(
+        light: UIColor(white: 0, alpha: 0.09),
+        dark: UIColor(white: 1, alpha: 0.09))
+
+    /// 主按钮/发送键的反色填充(浅色模式黑底白字,深色模式白底黑字)
+    static let accentFill = dynamic(light: .black, dark: .white)
+    static let onAccent = dynamic(light: .white, dark: .black)
+
+    // 语义色(两种模式通用)
+    static let mint = Color(red: 0.18, green: 0.72, blue: 0.44)
+    static let amber = Color(red: 0.96, green: 0.63, blue: 0.11)
+    static let azure = Color(red: 0.16, green: 0.47, blue: 0.90)
+    static let coral = Color(red: 0.93, green: 0.33, blue: 0.30)
+
+    static let textPrimary = dynamic(light: UIColor(white: 0.07, alpha: 1),
+                                     dark: UIColor(white: 0.94, alpha: 1))
+    static let textSecondary = dynamic(light: UIColor(white: 0.42, alpha: 1),
+                                       dark: UIColor(white: 0.64, alpha: 1))
+    static let textTertiary = dynamic(light: UIColor(white: 0.58, alpha: 1),
+                                      dark: UIColor(white: 0.42, alpha: 1))
 
     static func background() -> some View {
-        ZStack {
-            LinearGradient(colors: [Color(red: 0.025, green: 0.09, blue: 0.17),
-                                    Color(red: 0.02, green: 0.06, blue: 0.12),
-                                    Color.black.opacity(0.92)],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-            // 中央光晕
-            RadialGradient(colors: [glow.opacity(0.22), .clear],
-                           center: .init(x: 0.32, y: 0.22),
-                           startRadius: 40, endRadius: 520)
-                .blur(radius: 30)
-            // 点阵世界地图底纹(圆形遮罩)
-            DotField()
-                .opacity(0.30)
-                .mask(
-                    RadialGradient(colors: [.white.opacity(0.9), .clear],
-                                   center: .init(x: 0.42, y: 0.40),
-                                   startRadius: 60, endRadius: 620)
-                )
-        }
-        .ignoresSafeArea()
-    }
-}
-
-/// 点阵底纹:细密网格点,边缘渐隐
-struct DotField: View {
-    var spacing: CGFloat = 26
-    var radius: CGFloat = 0.8
-
-    var body: some View {
-        Canvas { context, size in
-            let color = Color.white.opacity(0.10)
-            var y: CGFloat = 0
-            while y < size.height {
-                var x: CGFloat = 0
-                while x < size.width {
-                    // 轻微打散,避免机械化
-                    let jitterX = (sin(x * 0.7 + y) * 0.8)
-                    let jitterY = (cos(y * 0.9 + x) * 0.8)
-                    let rect = CGRect(x: x + jitterX, y: y + jitterY, width: radius * 2, height: radius * 2)
-                    context.fill(Path(ellipseIn: rect), with: .color(color))
-                    x += spacing
-                }
-                y += spacing
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
-// MARK: - 玻璃卡片
-
-struct GlassCard<Content: View>: View {
-    var padding: CGFloat = 18
-    var cornerRadius: CGFloat = 22
-    var strong: Bool = false
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        content()
-            .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(strong ? Theme.cardFillStrong : Theme.cardFill)
-                    .background(.ultraThinMaterial.opacity(0.25), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Theme.cardStroke, lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.22), radius: 18, y: 10)
+        bgSolid
     }
 }
 
@@ -104,10 +57,10 @@ struct ZMark: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                .fill(.white)
+                .fill(Theme.accentFill)
             Text("Z")
                 .font(.system(size: size * 0.62, weight: .black))
-                .foregroundStyle(.black)
+                .foregroundStyle(Theme.onAccent)
                 .offset(y: -size * 0.02)
         }
         .frame(width: size, height: size)
@@ -141,6 +94,26 @@ struct StatusDot: View {
 
 // MARK: - 通用控件
 
+struct GlassCard<Content: View>: View {
+    var padding: CGFloat = 18
+    var cornerRadius: CGFloat = 22
+    var strong: Bool = false
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        content()
+            .padding(padding)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(strong ? Theme.cardFillStrong : Theme.cardFill)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Theme.cardStroke, lineWidth: 1)
+            )
+    }
+}
+
 struct CircleIconButton: View {
     var systemName: String
     var size: CGFloat = 44
@@ -153,8 +126,8 @@ struct CircleIconButton: View {
                 .font(.system(size: size * 0.38, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: size, height: size)
-                .background(Circle().fill(Color.white.opacity(0.08)))
-                .overlay(Circle().strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
+                .background(Circle().fill(Theme.cardFill))
+                .overlay(Circle().strokeBorder(Theme.cardStroke, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -168,17 +141,17 @@ struct PillBadge: View {
     var body: some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(filled ? .black : tint)
+            .foregroundStyle(filled ? Theme.onAccent : tint)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(
-                Capsule().fill(filled ? tint : Color.white.opacity(0.08))
+                Capsule().fill(filled ? tint : Theme.cardFill)
             )
-            .overlay(filled ? nil : Capsule().strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
+            .overlay(filled ? nil : Capsule().strokeBorder(Theme.cardStroke, lineWidth: 1))
     }
 }
 
-/// 大圆角主按钮(新建会话)
+/// 大圆角主按钮
 struct PrimaryActionButton: View {
     var title: String
     var systemName: String
@@ -192,23 +165,23 @@ struct PrimaryActionButton: View {
                 Text(title)
                     .font(.system(size: 17, weight: .semibold))
             }
-            .foregroundStyle(Theme.textPrimary)
+            .foregroundStyle(Theme.accentFill)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Theme.azure.opacity(0.16))
+                    .fill(Theme.cardFillStrong)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Theme.azure.opacity(0.45), lineWidth: 1)
+                    .strokeBorder(Theme.cardStroke, lineWidth: 1)
             )
         }
         .buttonStyle(bouncy())
     }
 }
 
-/// 轻弹性按钮样式(动效)
+/// 轻弹性按钮样式
 struct bouncy: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
