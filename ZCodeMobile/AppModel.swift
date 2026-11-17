@@ -339,6 +339,7 @@ final class AppModel: ObservableObject {
                 if case .ready = status.phase {
                     self?.sidContinuationUsed = false // 配对成功,接续预算复位
                     self?.ensureTaskListLoaded()
+                    self?.resumeOpenSessionIfNeeded()
                     #if DEBUG
                     if ProcessInfo.processInfo.environment["ZCODEMOBILE_PROBE_API"] == "1" {
                         self?.probeServiceMethods()
@@ -472,10 +473,16 @@ final class AppModel: ObservableObject {
     // MARK: - 会话交互
 
     func select(task: TaskEntry) {
-        if task.taskId == selectedTask?.taskId, openConversation { return }
-        if task.taskId == selectingTaskID { return } // 同一目标订阅中,避免重复订阅
+        select(task: task, force: false)
+    }
+
+    func select(task: TaskEntry, force: Bool) {
+        if !force {
+            if task.taskId == selectedTask?.taskId, openConversation { return }
+            if task.taskId == selectingTaskID { return } // 同一目标订阅中,避免重复订阅
+        }
         selectingTaskID = task.taskId
-        ZDlog("[ZCodeMobile][tap] select begin %@", task.taskId)
+        ZDlog("[ZCodeMobile][tap] select begin %@ force=%@", task.taskId, force ? "yes" : "no")
         selectedTask = task
         let sessionTarget = task
         Task {
@@ -1105,6 +1112,21 @@ final class AppModel: ObservableObject {
         case "default", "build": return "build"
         default: return raw
         }
+    }
+
+    /// 重连/回前台恢复后:若之前打开着会话,自动重新订阅(否则停在“正在打开会话”)
+    func resumeOpenSessionIfNeeded() {
+        guard openConversation, let task = selectedTask else { return }
+        if conversationStateForUI?.sessionId != nil { return }
+        ZDlog("[ZCodeMobile] resume open session %@", task.taskId)
+        select(task: task, force: true)
+    }
+
+    /// 加载页兜底重试
+    func retryCurrentSession() {
+        guard let task = selectedTask else { return }
+        ZDlog("[ZCodeMobile] retry current session %@", task.taskId)
+        select(task: task, force: true)
     }
 
     /// 会话列表空窗自愈:桥就绪但 3 秒内没有任务 → 重新订阅 controller(最多 4 次)

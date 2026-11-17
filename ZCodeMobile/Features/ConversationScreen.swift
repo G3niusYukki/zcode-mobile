@@ -10,6 +10,7 @@ struct ConversationScreen: View {
     @State private var showContext = false
     @State private var copiedRowId: Int?
     @State private var lastScrollSignature = ""
+    @State private var autoRetried = false
     @State private var showActions = false
     @State private var modelDraft = ""
     @State private var providerDraft = ""
@@ -188,9 +189,7 @@ struct ConversationScreen: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
             Button("加载卡住了?点此重试") {
-                if let task = model.selectedTask {
-                    model.select(task: task)
-                }
+                model.retryCurrentSession()
             }
             .font(.system(size: 12))
             .foregroundStyle(Theme.azure)
@@ -198,6 +197,14 @@ struct ConversationScreen: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
+        .task(id: model.selectedTask?.taskId) {
+            autoRetried = false
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            if state?.sessionId == nil, !autoRetried {
+                autoRetried = true
+                model.retryCurrentSession()
+            }
+        }
     }
 
     // MARK: 输入区
