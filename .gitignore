@@ -1,0 +1,19 @@
+# Xcode / build
+.build/
+*.xcodeproj/
+DerivedData/
+*.xcworkspace/
+xcuserdata/
+*.xcuserstate
+build/
+
+# macOS
+.DS_Store
+
+# Local artifacts (screenshots, logs)
+artifacts/
+*.log
+
+# Secrets / local env
+.env
+*.local
