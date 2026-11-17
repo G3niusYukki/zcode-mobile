@@ -85,6 +85,31 @@ struct SettingsScreen: View {
                         }
                     }
 
+                    section("真后台推送(可选)", footer: "配合仓库内 server/ 的 APNs 网关使用:锁屏后仍能收到审批与状态更新。") {
+                        SettingsCard {
+                            Toggle(isOn: Binding(
+                                get: { model.pushEnabled },
+                                set: { model.updatePushSettings(enabled: $0, url: model.pushSyncURL, secret: model.pushSecret) }
+                            )) {
+                                Text("启用真后台更新")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(Theme.textPrimary)
+                            }
+                            .tint(Theme.azure)
+                            .padding(.vertical, 10)
+                            divider
+                            pushField(title: "中转地址", text: Binding(
+                                get: { model.pushSyncURL },
+                                set: { model.updatePushSettings(enabled: model.pushEnabled, url: $0, secret: model.pushSecret) }
+                            ), placeholder: "https://your-worker.workers.dev")
+                            divider
+                            pushField(title: "密钥", text: Binding(
+                                get: { model.pushSecret },
+                                set: { model.updatePushSettings(enabled: model.pushEnabled, url: model.pushSyncURL, secret: $0) }
+                            ), placeholder: "与网关一致的 secret", secure: true)
+                        }
+                    }
+
                     section("外观") {
                         SettingsCard {
                             settingRow("界面", value: "跟随系统", chevron: true)
@@ -157,6 +182,28 @@ struct SettingsScreen: View {
             }
         }
         .padding(.vertical, 13)
+    }
+
+    private func pushField(title: String, text: Binding<String>, placeholder: String, secure: Bool = false) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Group {
+                if secure {
+                    SecureField(placeholder, text: text)
+                } else {
+                    TextField(placeholder, text: text)
+                }
+            }
+            .font(.system(size: 12.5, design: .monospaced))
+            .multilineTextAlignment(.trailing)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.never)
+            .frame(maxWidth: 190)
+        }
+        .padding(.vertical, 11)
     }
 
     private func rowLabel(_ title: String, tint: Color, chevron: Bool) -> some View {

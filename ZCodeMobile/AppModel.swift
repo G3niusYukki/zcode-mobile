@@ -43,6 +43,13 @@ final class AppModel: ObservableObject {
     @Published var drafts: [String: String] = [:]
     @Published var keyboardVisible = false
     private var backgroundedAt: Date?
+
+    // 真后台推送(中转服务器 + APNs 网关)
+    @Published var pushEnabled = UserDefaults.standard.bool(forKey: "zcode-mobile.pushEnabled")
+    @Published var pushSyncURL = UserDefaults.standard.string(forKey: "zcode-mobile.pushSyncURL") ?? ""
+    @Published var pushSecret = UserDefaults.standard.string(forKey: "zcode-mobile.pushSecret") ?? ""
+    private var lastPushSync = Date.distantPast
+    private var pushSyncTask: Task<Void, Never>?
     private var selectingTaskID: String?
     #if DEBUG
     private var configTested = false
@@ -208,6 +215,9 @@ final class AppModel: ObservableObject {
                                                object: nil, queue: .main) { [weak self] _ in
             self?.keyboardVisible = false
         }
+        LiveActivityManager.shared.onPushTokenOrStateChanged = { [weak self] in
+            self?.syncLiveActivityToRelay()
+        }
         startNetworkMonitor()
         loadDemoDataIfNeeded()
         // 冷启动自动连接(之前必须手动扫码/登录才连;演示模式跳过)
@@ -221,6 +231,7 @@ final class AppModel: ObservableObject {
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification,
                                                object: nil, queue: .main) { [weak self] _ in
             self?.backgroundedAt = Date()
+            self?.syncLiveActivityToRelay(force: true) // 离屏前把最新状态交给中转/网关
         }
         NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification,
                                                object: nil, queue: .main) { [weak self] _ in
@@ -1042,6 +1053,49 @@ final class AppModel: ObservableObject {
         return report
     }
 
+    /// 推送配置变更
+    func updatePushSettings(enabled: Bool, url: String, secret: String) {
+        pushEnabled = enabled
+        pushSyncURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        pushSecret = secret
+        UserDefaults.standard.set(enabled, forKey: "zcode-mobile.pushEnabled")
+        UserDefaults.standard.set(pushSyncURL, forKey: "zcode-mobile.pushSyncURL")
+        UserDefaults.standard.set(pushSecret, forKey: "zcode-mobile.pushSecret")
+        syncLiveActivityToRelay(force: true)
+    }
+
+    /// 上报 Live Activity token + 完整状态到中转(APNs 网关从这里取)
+    func syncLiveActivityToRelay(force: Bool = false) {
+        guard pushEnabled, !pushSyncURL.isEmpty, !pushSecret.isEmpty,
+              let url = URL(string: pushSyncURL) else { return }
+        guard let token = LiveActivityManager.shared.latestPushTokenHex,
+              let state = LiveActivityManager.shared.latestStateJSON else { return }
+        let now = Date()
+        guard force || now.timeIntervalSince(lastPushSync) > 5 else { return }
+        lastPushSync = now
+
+        var request = URLRequest(url: url.appendingPathComponent("sync"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "secret": pushSecret,
+            "push_token": token,
+            "state": state,
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        pushSyncTask?.cancel()
+        pushSyncTask = Task {
+            do {
+                let (_, response) = try await URLSession.shared.data(for: request)
+                if let http = response as? HTTPURLResponse {
+                    ZDlog("[ZCodeMobile][push] sync → %d", http.statusCode)
+                }
+            } catch {
+                ZDlog("[ZCodeMobile][push] sync failed: %@", String(describing: error))
+            }
+        }
+    }
+
     /// 把当前会话投影到实时活动(锁屏 + 灵动岛)
     func updateLiveActivity() {
         guard openConversation, let task = selectedTask else {
@@ -1076,6 +1130,7 @@ final class AppModel: ObservableObject {
             modeLabel: availableModes.first { $0.value == selectedMode }?.label ?? selectedMode,
             workspaceShort: workspaceShortPathForActivity,
             lastToolName: lastTool)
+        syncLiveActivityToRelay()
     }
 
     private var workspaceShortPathForActivity: String {

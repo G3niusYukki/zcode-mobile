@@ -12,7 +12,27 @@ final class LiveActivityManager {
     private var currentSessionID: String?
     private var pendingUpdate: Task<Void, Never>?
     private var startedAtBySession: [String: Date] = [:]
+    private var tokenTask: Task<Void, Never>?
     private let staleInterval: TimeInterval = 15 * 60
+
+    /// 推送 token / 状态变化(用于上报中转,由 AppModel 消费)
+    var onPushTokenOrStateChanged: (() -> Void)?
+    private(set) var latestPushTokenHex: String?
+    private(set) var latestStateJSON: String?
+
+    /// 收集活动推送 token(Live Activity 远程更新凭据)
+    private func observeToken(_ activity: Activity<SessionActivityAttributes>) {
+        tokenTask?.cancel()
+        tokenTask = Task { [weak self] in
+            for await tokenData in activity.pushTokenUpdates {
+                let hex = tokenData.map { String(format: "%02x", $0) }.joined()
+                await MainActor.run {
+                    self?.latestPushTokenHex = hex
+                    self?.onPushTokenOrStateChanged?()
+                }
+            }
+        }
+    }
 
     // MARK: 同步入口(节流 0.6s)
 
@@ -47,6 +67,8 @@ final class LiveActivityManager {
         if let existing = activity, currentSessionID == sessionID {
             let content = ActivityContent(state: state, staleDate: Date().addingTimeInterval(staleInterval))
             await existing.update(content)
+            latestStateJSON = Self.encodeState(state)
+            onPushTokenOrStateChanged?()
             return
         }
         // 换了会话:结束旧的,起新的
@@ -62,13 +84,21 @@ final class LiveActivityManager {
                 attributes: attributes,
                 content: ActivityContent(state: state,
                                          staleDate: Date().addingTimeInterval(staleInterval)),
-                pushType: nil)
+                pushType: .token)
             activity = created
             currentSessionID = sessionID
-            ZDlog("[ZDuo][live] started activity for %@", sessionID)
+            observeToken(created)
+            latestStateJSON = Self.encodeState(state)
+            onPushTokenOrStateChanged?()
+            ZDlog("[ZCodeMobile][live] started activity for %@", sessionID)
         } catch {
             ZDlog("[ZDuo][live] request failed: %@", String(describing: error))
         }
+    }
+
+    static func encodeState(_ state: SessionActivityAttributes.ContentState) -> String? {
+        guard let data = try? JSONEncoder().encode(state) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     /// 结束(离开会话/任务终止)
@@ -86,6 +116,9 @@ final class LiveActivityManager {
         let activityToEnd = existing
         activity = nil
         currentSessionID = nil
+        latestPushTokenHex = nil
+        latestStateJSON = nil
+        tokenTask?.cancel()
         Task { await activityToEnd.end(content, dismissalPolicy: .after(Date().addingTimeInterval(30))) }
         ZDlog("[ZDuo][live] end activity")
     }
