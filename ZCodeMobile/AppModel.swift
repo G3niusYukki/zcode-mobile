@@ -130,6 +130,7 @@ final class AppModel: ObservableObject {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
             openConversation = false
         }
+        LiveActivityManager.shared.end()
     }
 
     /// 新建会话(命令失败给出提示)
@@ -368,6 +369,7 @@ final class AppModel: ObservableObject {
 
     func disconnect() {
         terminalFailure = nil
+        LiveActivityManager.shared.end()
         relay?.stop(reason: "user")
         relay = nil
         bridge = nil
@@ -1033,6 +1035,47 @@ final class AppModel: ObservableObject {
         return report
     }
 
+    /// 把当前会话投影到实时活动(锁屏 + 灵动岛)
+    func updateLiveActivity() {
+        guard openConversation, let task = selectedTask else {
+            LiveActivityManager.shared.end()
+            return
+        }
+        let state = conversationStateForUI
+        let interactions = state?.pendingInteractions ?? []
+        let permissions = interactions.filter { $0.kind == "permission" }.count
+        let inputs = interactions.filter { $0.kind == "userInput" }.count
+
+        let phase: SessionActivityPhase
+        if permissions > 0 {
+            phase = .awaitingApproval
+        } else if inputs > 0 {
+            phase = .awaitingInput
+        } else if state?.isRunning == true {
+            phase = .running
+        } else if let rawPhase = state?.control.phase, rawPhase.hasPrefix("error") {
+            phase = .failed
+        } else {
+            phase = .idle
+        }
+
+        let lastTool = state?.rows.last(where: { $0.kind == "toolCall" && $0.state == "running" })?.toolName
+        LiveActivityManager.shared.sync(
+            sessionID: task.taskId,
+            title: state?.title ?? task.title,
+            phase: phase,
+            approvalCount: permissions + inputs,
+            model: currentModelLabel,
+            modeLabel: availableModes.first { $0.value == selectedMode }?.label ?? selectedMode,
+            workspaceShort: workspaceShortPathForActivity,
+            lastToolName: lastTool)
+    }
+
+    private var workspaceShortPathForActivity: String {
+        let path = activeWorkspace?.workspacePath ?? selectedTask?.workspacePath ?? ""
+        return path.replacingOccurrences(of: "/Users/", with: "~/")
+    }
+
     /// 从会话快照同步当前 模型/思考/模式(桌面端为准)
     func syncSelectionsFromState() {
         guard let config = conversationStateForUI?.snapshotRaw["config"] as? [String: Any] else { return }
@@ -1090,6 +1133,7 @@ final class AppModel: ObservableObject {
                 let work = DispatchWorkItem { [weak self] in
                     guard let self else { return }
                     self.syncSelectionsFromState()
+                    self.updateLiveActivity()
                     self.conversationTick += 1
                     self.pendingRefresh = nil
                 }

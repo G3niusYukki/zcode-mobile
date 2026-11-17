@@ -24,6 +24,8 @@
 	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>扫描桌面端 ZCode 显示的配对二维码</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
