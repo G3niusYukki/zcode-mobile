@@ -19,7 +19,7 @@ ZCode(智谱 Z.ai / BigModel 的 AI 编程工具)的桌面版自带「移动端�
 - 模型切换(按桌面端真实目录分组)、思考强度(low/high/max)、
   审批模式(完全访问 / 自动审批 / 严格审批 / 默认 / 计划)
 - 图片与文件附件(分片上传 + SHA-256 校验,≤20 MiB)
-- 用量:上下文占用、缓存命中;Coding Plan 额度与到期时间
+- 用量与配额：会话上下文容量及来源占比、平均缓存命中率；Coding Plan 真实剩余额度（5 小时 / 每周 / ZCode MCP / 重置次数）与 7天/30天/累计使用统计
 - 实时活动 / 灵动岛：锁屏卡片与灵动岛展示会话状态、待审批数量、运行时长、模型与审批模式
 - **真后台实时更新**(可选):自托管 APNs 网关,锁屏后审批/状态仍实时上岛 —— 见 [server/README.md](server/README.md)
 - 按会话保留草稿
@@ -27,10 +27,11 @@ ZCode(智谱 Z.ai / BigModel 的 AI 编程工具)的桌面版自带「移动端�
 
 ### iPhone Duo 适配
 
-- 展开态:左会话栏(37%)+ 右交互区
-- Duo 内屏使用系统竖向工具条(`axisBehavior(.verticalPreferred)`)
-- 预留区避让(`reservedRegions`),半折叠姿态检测(`onHingeChange`)
-- 全局背景:15fps Metal 流体 + 点阵 Z + 光弧,进入会话/键盘弹出自动暂停以省电
+- 展开态：毛玻璃会话侧栏（36.5%，支持一键折叠专注模式）+ 右侧交互工作台
+- 折叠外屏：全屏无留白出血背景 + 左边缘右滑跟手返回手势
+- Duo 竖向工具条：原生 iOS 27 标准尺寸 Liquid Glass 按钮（`axisBehavior(.verticalPreferred)`）
+- 预留区避让（`reservedRegions`），半折叠姿态检测（`onHingeChange`）
+- 自适应 Liquid Glass & 毛玻璃主题：跟随系统 / 浅色 / 深色、极光/极简毛玻璃氛围、字体缩放与触感反馈可调
 
 ## 架构
 
@@ -51,7 +52,7 @@ Packages/ZCodeMobileCore/       协议包(纯 Swift,可独立 swift test)
 
 ## 下载
 
-[Releases](https://github.com/G3niusYukki/zcode-mobile/releases) 提供**未签名 IPA**(`ZCodeMobile-v1.0.0-unsigned.ipa`),需自行签名安装:
+[Releases](https://github.com/G3niusYukki/zcode-mobile/releases) 提供**未签名 IPA**(`ZCodeMobile-v1.1.0-unsigned.ipa`),需自行签名安装:
 
 - AltStore / SideStore / Sideloadly / Esign 等工具重签名后安装
 - 或 Xcode 打开源码,按下方步骤用自己的 Apple ID 签名构建

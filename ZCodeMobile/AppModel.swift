@@ -28,9 +28,12 @@ final class AppModel: ObservableObject {
     var autoOpened = false
     #endif
     @Published var openConversation = false
+    @Published var sidebarCollapsed = false
     @Published var showDeviceSheet = false
     @Published var activeWorkspaceID: String?
     @Published var toast: String?
+    @Published var toastIcon: String = "sparkles"
+    @Published var toastTint: Color = Theme.azure
     @Published var pendingAttachments: [PendingAttachment] = []
     @Published var modelCatalog: [SessionConfigChannel.ModelOption] = []
     @Published var availableModes: [SessionConfigChannel.ModeOption] = SessionConfigChannel.ModeOption.fallback
@@ -39,6 +42,8 @@ final class AppModel: ObservableObject {
     @Published var selectedModel: String = ""
     @Published var selectedProvider: String = ""
     @Published var usageReport: UsageChannel.UsageReport?
+    @Published var usageRange: String = "30d"
+    @Published var isRefreshingUsage = false
     @Published var showUsageSheet = false
     @Published var drafts: [String: String] = [:]
     @Published var keyboardVisible = false
@@ -126,49 +131,101 @@ final class AppModel: ObservableObject {
 
     func openTask(_ task: TaskEntry) {
         Self.dismissKeyboard()
+        Haptics.selection()
         select(task: task)
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+        let focusPref = UserDefaults.standard.string(forKey: "zcode-mobile.duoLayoutMode") == DuoLayoutPreference.focus.rawValue
+        withAnimation(Motion.smooth) {
             openConversation = true
+            if focusPref {
+                sidebarCollapsed = true
+            }
         }
     }
 
     func closeConversation() {
         Self.dismissKeyboard()
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+        Haptics.light()
+        withAnimation(Motion.smooth) {
             openConversation = false
+            sidebarCollapsed = false
         }
         LiveActivityManager.shared.end()
+    }
+
+    func toggleSidebar() {
+        Haptics.selection()
+        withAnimation(Motion.smooth) {
+            sidebarCollapsed.toggle()
+        }
     }
 
     /// 新建会话(命令失败给出提示)
     func newSession() {
         guard let workspace = activeWorkspace ?? workspaces.first, let conversation else {
-            showToast("尚未连接桌面端")
+            showToast("尚未连接桌面端", icon: "wifi.exclamationmark", tint: Theme.amber)
             return
         }
+        Haptics.medium()
         Task {
             do {
                 let ack = try await conversation.createSession(
                     workspacePath: workspace.workspacePath,
                     workspaceIdentity: workspace.workspaceIdentity)
                 if !ack.isSuccess {
-                    await MainActor.run { self.showToast("新建失败:\(ack.message ?? ack.status)") }
+                    await MainActor.run { self.showToast("新建失败:\(ack.message ?? ack.status)", icon: "exclamationmark.triangle.fill", tint: Theme.coral) }
                 }
             } catch {
-                await MainActor.run { self.showToast("新建失败:\(String(describing: error))") }
+                await MainActor.run { self.showToast("新建失败:\(String(describing: error))", icon: "exclamationmark.triangle.fill", tint: Theme.coral) }
             }
         }
     }
 
     func switchWorkspace(_ ws: WorkspaceInfo) {
-        activeWorkspaceID = ws.id
-        openConversation = false
+        Haptics.selection()
+        withAnimation(Motion.smooth) {
+            activeWorkspaceID = ws.id
+            openConversation = false
+        }
     }
 
-    func showToast(_ text: String) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { toast = text }
+    func showToast(_ text: String, icon: String? = nil, tint: Color? = nil) {
+        let inferredIcon: String
+        let inferredTint: Color
+        if let icon, let tint {
+            inferredIcon = icon
+            inferredTint = tint
+        } else if text.contains("失败") || text.contains("被拒") || text.contains("未") {
+            inferredIcon = icon ?? "exclamationmark.triangle.fill"
+            inferredTint = tint ?? Theme.amber
+        } else if text.contains("已") || text.contains("复制") || text.contains("成功") {
+            inferredIcon = icon ?? "checkmark.circle.fill"
+            inferredTint = tint ?? Theme.mint
+        } else {
+            inferredIcon = icon ?? "sparkles"
+            inferredTint = tint ?? Theme.azure
+        }
+        if inferredTint == Theme.coral {
+            Haptics.error()
+        } else if inferredTint == Theme.amber {
+            Haptics.warning()
+        } else if inferredTint == Theme.mint {
+            Haptics.success()
+        }
+        withAnimation(Motion.bouncy) {
+            toastIcon = inferredIcon
+            toastTint = inferredTint
+            toast = text
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
-            withAnimation { if self.toast == text { self.toast = nil } }
+            withAnimation(Motion.smooth) {
+                if self.toast == text { self.toast = nil }
+            }
+        }
+    }
+
+    func dismissToast() {
+        withAnimation(Motion.snappy) {
+            toast = nil
         }
     }
 
@@ -351,6 +408,7 @@ final class AppModel: ObservableObject {
                     self?.sidContinuationUsed = false // 配对成功,接续预算复位
                     self?.ensureTaskListLoaded()
                     self?.resumeOpenSessionIfNeeded()
+                    self?.refreshUsage()
                     #if DEBUG
                     if ProcessInfo.processInfo.environment["ZCODEMOBILE_PROBE_API"] == "1" {
                         self?.probeServiceMethods()
@@ -762,7 +820,24 @@ final class AppModel: ObservableObject {
             "revision": 3,
             "meta": ["title": demoTitles[0].0],
             "control": ["phase": "running", "canStop": true, "stopState": "stoppable"],
-            "config": ["model": "zcode/GLM-5.3-Flash", "thought": "max", "mode": "yolo"],
+            "config": ["model": "zcode/GLM-5.4", "thought": "max", "mode": "yolo"],
+            "usage": [
+                "used": 440_000,
+                "size": 1_000_000,
+                "cache": [
+                    "hitRate": 0.945,
+                    "totalInputTokens": 440_000,
+                    "totalCacheReadTokens": 415_800,
+                ],
+                "breakdown": [
+                    ["source": "messages", "chars": 983_000],
+                    ["source": "system_tool_schemas", "chars": 8_000],
+                    ["source": "mcp_tool_schemas", "chars": 5_000],
+                    ["source": "meta_user_context", "chars": 2_000],
+                    ["source": "skills", "chars": 1_000],
+                    ["source": "system_prompt", "chars": 0],
+                ],
+            ],
             "pendingInteractions": [[
                 "interactionId": "perm_demo",
                 "kind": "permission",
@@ -810,6 +885,55 @@ final class AppModel: ObservableObject {
             state.apply(frame: frame)
         }
         demoState = state
+        let nowDate = Date()
+        usageReport = UsageChannel.UsageReport(
+            raw: ["demo": true],
+            used: 2,
+            limit: 100,
+            resetAt: nowDate.addingTimeInterval(4 * 3600),
+            provider: "usage-stats.getEntitlementSnapshot",
+            planName: "Coding Plan Max",
+            planLevel: "max",
+            planExpireAt: nowDate.addingTimeInterval(30 * 86400),
+            providerDisplayName: "BigModel - Coding Plan",
+            quotaWindows: [
+                .init(id: "fiveHour", label: "5 小时", remainingPercent: 98, usedPercent: 2,
+                      nextResetTime: nowDate.addingTimeInterval(4 * 3600), resetTimeStyle: "dateTime",
+                      accentKey: "blue", hasResetOpportunity: false),
+                .init(id: "weekly", label: "每周", remainingPercent: 99, usedPercent: 1,
+                      nextResetTime: nowDate.addingTimeInterval(7 * 86400), resetTimeStyle: "date",
+                      accentKey: "green", hasResetOpportunity: true),
+                .init(id: "serverMcp", label: "ZCode MCP", remainingPercent: 100, usedPercent: 0,
+                      nextResetTime: nowDate.addingTimeInterval(1 * 86400), resetTimeStyle: "date",
+                      accentKey: "orange", hasResetOpportunity: false),
+            ],
+            resetStatus: .init(fiveHourCount: 1, weekCount: 2, earliestExpireAt: nowDate.addingTimeInterval(14 * 86400)),
+            appUsage: .init(
+                range: "30d",
+                totalTokens: 18_420_000,
+                peakDailyTokens: 2_650_000,
+                peakDailyDate: "2026-11-21",
+                longestSessionMs: 5_400_000,
+                totalUsageDurationMs: 42_600_000,
+                currentStreakDays: 12,
+                longestStreakDays: 19,
+                sessionCount: 64,
+                messageCount: 518,
+                activeDays: 22,
+                cacheHitRate: 0.945,
+                favoriteModelName: "GLM-5.4",
+                dailySeries: [
+                    .init(date: "2026-11-17", tokens: 920_000, turns: 28),
+                    .init(date: "2026-11-18", tokens: 1_450_000, turns: 42),
+                    .init(date: "2026-11-19", tokens: 780_000, turns: 19),
+                    .init(date: "2026-11-20", tokens: 1_890_000, turns: 54),
+                    .init(date: "2026-11-21", tokens: 2_650_000, turns: 76),
+                    .init(date: "2026-11-22", tokens: 1_620_000, turns: 45),
+                    .init(date: "2026-11-23", tokens: 1_280_000, turns: 33),
+                ]
+            )
+        )
+        showUsageSheet = ProcessInfo.processInfo.environment["ZCODEMOBILE_DEMO_USAGE"] == "1"
         #endif
     }
 
@@ -979,20 +1103,52 @@ final class AppModel: ObservableObject {
         applyModel(provider: provider, model: currentModelLabel)
     }
 
-    func refreshUsage() {
+    var contextUsageSnapshot: UsageChannel.ContextUsageSnapshot? {
+        guard let raw = conversationStateForUI?.snapshotRaw else { return nil }
+        return UsageChannel.ContextUsageSnapshot.parse(from: raw)
+    }
+
+    func refreshUsage(range: String? = nil) {
+        if let range { usageRange = range }
+        let targetRange = usageRange
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["ZCODEMOBILE_DEMO"] == "1" { return }
+        #endif
+        isRefreshingUsage = true
+        let activeProvider = selectedProvider.isEmpty ? currentProvider : selectedProvider
         Task {
-            // 1) 官方计费 REST(coding plan 用量/重置)
-            if let device = self.device, let jwt = self.tokenStore.validJWT(),
-               let billing = try? await self.api.fetchBilling(origin: device.origin, jwt: jwt) {
-                if let report = self.makeBillingReport(billing, provider: "coding-plan.billing") {
-                    await MainActor.run { self.usageReport = report }
-                    return
+            defer {
+                Task { @MainActor [weak self] in self?.isRefreshingUsage = false }
+            }
+            // 1) 优先走桌面端真实 usage-stats 通道(5小时 / 每周 / ZCode MCP 剩余额度 + 重置次数 + 本地/套餐使用统计)
+            var desktopReport: UsageChannel.UsageReport?
+            if let channel = usageChannel {
+                desktopReport = await channel.fetchUsage(range: targetRange, activeProviderId: activeProvider)
+            }
+
+            // 2) 若桌面端未返回配额窗口(如 Start Plan 或桌面未连接),补充官方计费 REST(/api/v1/zcode-plan/billing/*)
+            var billingReport: UsageChannel.UsageReport?
+            if desktopReport == nil || (desktopReport?.quotaWindows.isEmpty ?? true) {
+                if let device = self.device, let jwt = self.tokenStore.validJWT(),
+                   let billing = try? await self.api.fetchBilling(origin: device.origin, jwt: jwt) {
+                    billingReport = self.makeBillingReport(billing, provider: "coding-plan.billing")
                 }
             }
-            // 2) 通道探测(桌面版本开放时可用)
-            guard let channel = usageChannel else { return }
-            if let report = await channel.fetchUsage() {
-                await MainActor.run { self.usageReport = report }
+
+            let finalReport: UsageChannel.UsageReport?
+            if var desktop = desktopReport {
+                if desktop.planName == nil { desktop.planName = billingReport?.planName }
+                if desktop.planExpireAt == nil { desktop.planExpireAt = billingReport?.resetAt }
+                if desktop.limit == nil { desktop.limit = billingReport?.limit }
+                if desktop.used == nil { desktop.used = billingReport?.used }
+                if let bRaw = billingReport?.raw { desktop.raw["billing"] = bRaw }
+                finalReport = desktop
+            } else {
+                finalReport = billingReport
+            }
+
+            if let finalReport {
+                await MainActor.run { self.usageReport = finalReport }
             }
         }
     }

@@ -13,7 +13,7 @@ struct ZCodeMobileLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SessionActivityAttributes.self) { context in
             LockScreenCard(context: context)
-                .activityBackgroundTint(Color.black.opacity(0.9))
+                .activityBackgroundTint(Color.black.opacity(0.62))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {

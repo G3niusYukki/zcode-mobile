@@ -1,62 +1,82 @@
 import SwiftUI
 import ZCodeMobileCore
 
-/// 终态失败全屏页:给出可操作的恢复路径,而不是让用户卡死。
-/// 二维码过期 → 自动接续失败时落到这里,主按钮引导重新扫码。
+/// 终态失败全屏毛玻璃恢复页:给出可操作的恢复路径,而不是让用户卡死。
 struct FailureView: View {
     @EnvironmentObject var model: AppModel
     let failure: AppModel.TerminalFailure
+    @State private var appeared = false
 
     var body: some View {
-        VStack(spacing: 18) {
-            Image(systemName: icon)
-                .font(.system(size: 52))
-                .foregroundStyle(.orange)
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+            Theme.bgSolid.opacity(0.35)
+                .ignoresSafeArea()
 
-            Text(failure.title)
-                .font(.title3.weight(.semibold))
-                .multilineTextAlignment(.center)
+            GlassCard(padding: 26, cornerRadius: 28, strong: true, tint: Theme.amber.opacity(0.06)) {
+                VStack(spacing: 18) {
+                    ZStack {
+                        Circle()
+                            .fill(Theme.amber.opacity(0.16))
+                            .frame(width: 76, height: 76)
+                        Image(systemName: icon)
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundStyle(Theme.amber)
+                            .symbolEffect(.pulse, value: appeared)
+                    }
 
-            Text(failure.message)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                    VStack(spacing: 8) {
+                        Text(failure.title)
+                            .font(.system(size: 21, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.textPrimary)
+                            .multilineTextAlignment(.center)
 
-            VStack(spacing: 10) {
-                // 主路径:重新扫码(拿到最新 sid,一步到位)
-                Button {
-                    model.terminalFailure = nil
-                    model.screen = .pairing
-                } label: {
-                    Label("重新扫码配对", systemImage: "qrcode.viewfinder")
-                        .frame(maxWidth: .infinity)
+                        Text(failure.message)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(3)
+                    }
+
+                    VStack(spacing: 10) {
+                        PrimaryActionButton(title: "重新扫码配对", systemName: "qrcode.viewfinder") {
+                            model.terminalFailure = nil
+                            withAnimation(Motion.smooth) {
+                                model.screen = .pairing
+                            }
+                        }
+
+                        PrimaryActionButton(title: "重试连接", systemName: "arrow.clockwise", prominent: false) {
+                            model.terminalFailure = nil
+                            model.reconnect()
+                        }
+
+                        Button {
+                            Haptics.warning()
+                            model.terminalFailure = nil
+                            model.logout()
+                        } label: {
+                            Text("切换账号")
+                                .font(.system(size: 13.5, weight: .semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                                .padding(.vertical, 8)
+                        }
+                        .buttonStyle(bouncy())
+                    }
+                    .padding(.top, 4)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-
-                // 次路径:重试(SID 接续判定 keepCurrent 或临时网络问题时有效)
-                Button {
-                    model.terminalFailure = nil
-                    model.reconnect()
-                } label: {
-                    Label("重试连接", systemImage: "arrow.clockwise")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-
-                Button("切换账号") {
-                    model.terminalFailure = nil
-                    model.logout()
-                }
-                .font(.footnote)
-                .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 48)
+            .frame(maxWidth: 420)
+            .padding(.horizontal, 24)
+            .scaleEffect(appeared ? 1 : 0.92)
+            .opacity(appeared ? 1 : 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
+        .onAppear {
+            Haptics.warning()
+            withAnimation(Motion.bouncy) { appeared = true }
+        }
     }
 
     private var icon: String {

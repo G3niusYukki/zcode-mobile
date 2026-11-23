@@ -25,18 +25,24 @@ struct LoginView: View {
                 }
                 if showManualPaste {
                     manualPasteSection
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .animation(Motion.smooth, value: showManualPaste)
             .navigationTitle("登录 ZCode 账号")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(model.device == nil ? "返回配对" : "重新扫码") { model.screen = .pairing }
-                        .foregroundStyle(.secondary)
+                    Button(model.device == nil ? "返回配对" : "重新扫码") {
+                        Haptics.light()
+                        model.screen = .pairing
+                    }
+                    .foregroundStyle(.secondary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(showManualPaste ? "收起" : "粘贴 Token") {
-                        withAnimation { showManualPaste.toggle() }
+                        Haptics.selection()
+                        withAnimation(Motion.smooth) { showManualPaste.toggle() }
                     }
                 }
             }
@@ -44,28 +50,52 @@ struct LoginView: View {
     }
 
     private var manualPasteSection: some View {
-        VStack(spacing: 8) {
-            Text("高级:手动粘贴 zcodejwttoken(从桌面端浏览器 localStorage 取)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("高级：手动粘贴 zcodejwttoken（从桌面端浏览器 localStorage 获取）")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textSecondary)
+            HStack(spacing: 8) {
                 SecureField("eyJ…", text: $manualJWT)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13.5, design: .monospaced))
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Theme.inputFill))
+                    .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.cardStroke, lineWidth: 0.8))
+                Button {
+                    if let clip = UIPasteboard.general.string, !clip.isEmpty {
+                        Haptics.light()
+                        manualJWT = clip
+                    }
+                } label: {
+                    Image(systemName: "doc.on.clipboard")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                        .frame(width: 38, height: 38)
+                        .liquidGlassChrome(in: Circle(), interactive: true)
+                }
+                .buttonStyle(bouncy(scale: 0.92))
                 Button("使用") {
                     let trimmed = manualJWT.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !trimmed.isEmpty else { return }
+                    Haptics.success()
                     model.loginHarvested(jwt: trimmed)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
+                .disabled(manualJWT.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             if TokenStore.isExpired(manualJWT.trimmingCharacters(in: .whitespacesAndNewlines)) && !manualJWT.isEmpty {
-                Text("此 token 已过期或无效").font(.caption).foregroundStyle(.red)
+                Label("此 token 已过期或无效", systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.coral)
             }
         }
-        .padding()
-        .background(.thinMaterial)
+        .padding(16)
+        .frostedSurface(in: RoundedRectangle(cornerRadius: 22, style: .continuous), strong: true, shadowRadius: 14)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
     }
 }
 
